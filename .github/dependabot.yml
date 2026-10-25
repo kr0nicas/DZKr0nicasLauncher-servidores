@@ -1,0 +1,7 @@
+# Que los SHA de las acciones se renueven por PR (las acciones van fijadas por SHA).
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
