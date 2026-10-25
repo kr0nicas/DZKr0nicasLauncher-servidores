@@ -4,6 +4,11 @@
       "id": "6c7d726e3d41f1e6",
       "spki": "MCowBQYDK2VwAyEA8iCSz1gQgCPOhRw9b4UqrkEvbZ4GoeoVZdCxf2753wU=",
       "uso": "ci"
+    },
+    {
+      "id": "653e7843d01fdc8c",
+      "spki": "MCowBQYDK2VwAyEAvfhO+srOrQv3ZOR/BXzo6b7stacmfKqc2yqn+K1MRmM=",
+      "uso": "repuesto"
     }
   ]
 }
