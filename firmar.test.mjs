@@ -184,7 +184,8 @@ test('claves-publicas.json: un id que no cuadra o repetido se rechaza', () => {
 
 test('las claves públicas del repositorio son Ed25519 y sus ids cuadran', () => {
   const keys = JSON.parse(readFileSync(new URL('./claves-publicas.json', import.meta.url), 'utf8'))
-  assert.ok(parsePublicKeys(keys).some((k) => k.uso === 'ci'))
+  const parsed = parsePublicKeys(keys)
+  assert.deepEqual(parsed.map((k) => k.uso).sort(), ['ci', 'repuesto'])
 })
 
 test('una carpeta con algo de más no se firma, ni antes ni después', () => {
