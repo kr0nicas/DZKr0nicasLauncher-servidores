@@ -284,7 +284,12 @@ export function failures({ result, base, nowS, acceptChange }) {
   const out = []
   const { servers, dropped, total } = result
   if (total >= STEAM_CAP) out.push(`llegan ${total} entradas, el tope de Steam: estaría cortada`)
-  const droppedCount = Object.values(dropped).reduce((a, b) => a + b, 0)
+  // El 5 % es de entradas malas. Lo que quita el tope por IP no cuenta: 513 servidores en una IP
+  // superan siempre el 5 % de una lista de 8000 como mucho, y así un tercero congelaría la lista. El
+  // suelo de 1000 sigue valiendo (decisión del autor, 24-oct).
+  const droppedCount = Object.entries(dropped)
+    .filter(([reason]) => reason !== 'tope-por-ip')
+    .reduce((sum, [, n]) => sum + n, 0)
   if (total > 0 && droppedCount / total > MAX_DROPPED)
     out.push(`se descarta el ${pct(droppedCount / total)} de las entradas (más del ${pct(MAX_DROPPED)})`)
   if (servers.length < MIN_SERVERS || servers.length > MAX_SERVERS)
