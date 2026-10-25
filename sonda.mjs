@@ -13,6 +13,7 @@ export const FILTER = '\\appid\\221100\\empty\\1'
 /** Lo más que da Steam en una petición (medido el 24-oct). Llegar a él es salir cortada. */
 export const STEAM_CAP = 10000
 const MAX_BYTES = 32 * 1024 * 1024
+const TOO_BIG = `la respuesta pasa de ${MAX_BYTES / 1048576} MB`
 const TIMEOUT_MS = 60_000
 const KEY = /^[0-9A-Fa-f]{32}$/
 
@@ -29,7 +30,7 @@ async function readCapped(res) {
   let size = 0
   for await (const chunk of res.body ?? []) {
     size += chunk.length
-    if (size > MAX_BYTES) throw new Error(`la respuesta pasa de ${MAX_BYTES / 1048576} MB`)
+    if (size > MAX_BYTES) throw new Error(TOO_BIG)
     chunks.push(chunk)
   }
   return Buffer.concat(chunks).toString('utf8')
@@ -60,7 +61,15 @@ export async function probe({ key, fetchImpl = fetch, now = () => Date.now() }) 
   if (res.status !== 200) return { status: res.status, count: null, ms }
   if (!(res.headers.get('content-type') ?? '').includes('json'))
     throw new Error('Steam no contestó con JSON')
-  const text = await readCapped(res)
+  let text
+  try {
+    text = await readCapped(res)
+  } catch (error) {
+    // Un corte a mitad del cuerpo sale con un mensaje fijo, sin el original.
+    throw new Error(
+      error?.message === TOO_BIG ? TOO_BIG : `no se pudo leer la respuesta (${error?.name ?? 'Error'})`
+    )
+  }
   let json
   try {
     json = JSON.parse(text)
