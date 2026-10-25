@@ -61,7 +61,18 @@ test('ningún error lleva la clave, aunque el error original la lleve', async ()
     },
     async () => new Response(`<html>${FAKE_KEY}</html>`, { headers: { 'content-type': 'text/html' } }),
     async () => new Response(`{"roto": "${FAKE_KEY}"`, { headers: { 'content-type': 'application/json' } }),
-    async () => json({ response: { nada: FAKE_KEY } })
+    async () => json({ response: { nada: FAKE_KEY } }),
+    // Un corte a mitad del cuerpo, con un error que lleva la clave.
+    async () =>
+      new Response(
+        new ReadableStream({
+          start(controller) {
+            controller.enqueue(new TextEncoder().encode('{"response":'))
+            controller.error(new Error(`terminated ${FAKE_KEY}`))
+          }
+        }),
+        { headers: { 'content-type': 'application/json' } }
+      )
   ]
   for (const fetchImpl of cases) {
     await assert.rejects(probe({ key: FAKE_KEY, fetchImpl }), (error) => {
