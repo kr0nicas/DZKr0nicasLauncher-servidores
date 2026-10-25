@@ -8,7 +8,7 @@
 // y del ADR-003, escritas otra vez porque este repositorio es público y el del launcher no. El launcher
 // vuelve a validar todo lo que baja: no se fía de esta validación.
 
-import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync, readdirSync, realpathSync, rmSync, writeFileSync } from 'node:fs'
 import { isAbsolute, join, resolve, sep } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { STEAM_CAP, readCapped } from './lib/steam.mjs'
@@ -99,6 +99,11 @@ export function cleanText(raw, max) {
 }
 
 const int = (v) => (typeof v === 'number' && Number.isInteger(v) ? v : null)
+const VERSION_SHAPE = /^\d+(\.\d+){1,3}$/
+
+/** El orden publicado: por jugadores, y a igualdad por IP y puerto de consulta. */
+export const byPlayers = (a, b) =>
+  b.players - a.players || (a.ip < b.ip ? -1 : a.ip > b.ip ? 1 : a.query - b.query)
 
 // --- La respuesta de Steam ---
 
@@ -179,15 +184,13 @@ export function parseSteam(raw) {
       // Unos jugadores imposibles se dejan en 0, no se descarta la entrada.
       players: players !== null && players >= 0 && players <= maxPlayers ? players : 0,
       maxPlayers,
-      version: version.length <= VERSION_MAX && /^\d+(\.\d+){1,3}$/.test(version) ? version : '',
+      version: version.length <= VERSION_MAX && VERSION_SHAPE.test(version) ? version : '',
       region: regionRaw,
       etiquetas: TAGS.filter((t) => gametype.includes(t))
     })
   }
   const overCap = new Set([...perIp].filter(([, n]) => n > MAX_PER_IP).map(([ip]) => ip))
-  const servers = kept
-    .filter((s) => !overCap.has(s.ip))
-    .sort((a, b) => b.players - a.players || (a.ip < b.ip ? -1 : a.ip > b.ip ? 1 : a.query - b.query))
+  const servers = kept.filter((s) => !overCap.has(s.ip)).sort(byPlayers)
   dropped['tope-por-ip'] = kept.length - servers.length
   return {
     servers,
@@ -307,6 +310,73 @@ export function failures({ result, base, nowS, acceptChange }) {
 
 const pct = (x) => `${(100 * x).toFixed(1).replace('.', ',')} %`
 
+// --- Lo que se firma (11.6 g) ---
+
+/**
+ * Por qué un `servidores.json` no es exactamente lo que publicaría esta tarea, o null. Lo usa
+ * firmar.mjs: la firma convierte en autoridad lo que deja pasar, así que solo se firma lo que
+ * `buildSite` produciría byte a byte, con las reglas de `parseSteam` (seguridad, I1).
+ */
+export function whyNotPublishable(text, nowS) {
+  if (typeof text !== 'string') return 'la lista no es texto'
+  if (Buffer.byteLength(text) > BASE_MAX_BYTES) return 'la lista pasa de 4 MB'
+  let json
+  try {
+    json = JSON.parse(text)
+  } catch {
+    return 'la lista no es JSON válido'
+  }
+  // `parseBase` mira el formato, el `generado`, el futuro, la edad y la forma de cada entrada.
+  const base = parseBase(json, nowS)
+  if (base.count === null) return `la lista no vale: ${base.reason}`
+  if (base.count < MIN_SERVERS || base.count > MAX_SERVERS)
+    return `el recuento (${base.count}) está fuera de los topes`
+  const seen = new Set()
+  const perIp = new Map()
+  const servers = json.servidores
+  for (const [i, s] of servers.entries()) {
+    const key = `${s.ip}:${s.query}`
+    if (seen.has(key)) return 'hay una entrada repetida'
+    seen.add(key)
+    perIp.set(s.ip, (perIp.get(s.ip) ?? 0) + 1)
+    if (cleanText(s.name, NAME_MAX) !== s.name || cleanText(s.map, MAP_MAX) !== s.map)
+      return 'hay un texto sin limpiar'
+    if (s.version !== '' && !VERSION_SHAPE.test(s.version)) return 'hay una versión sin forma de versión'
+    if (s.etiquetas.join(',') !== TAGS.filter((t) => s.etiquetas.includes(t)).join(','))
+      return 'hay etiquetas repetidas o fuera de orden'
+    if (i > 0 && byPlayers(servers[i - 1], s) > 0) return 'la lista no está en orden'
+  }
+  if ([...perIp.values()].some((n) => n > MAX_PER_IP)) return `hay una IP con más de ${MAX_PER_IP}`
+  // Byte a byte: sin campos de más, claves repetidas, espacios ni escapes distintos.
+  const same = buildSite(
+    servers.map((s) => ({
+      ip: s.ip,
+      query: s.query,
+      game: s.game,
+      name: s.name,
+      map: s.map,
+      players: s.players,
+      maxPlayers: s.maxPlayers,
+      version: s.version,
+      region: s.region,
+      etiquetas: s.etiquetas
+    })),
+    json.generado
+  )['servidores.json']
+  if (same !== text) return 'la lista no es la que escribiría generar.mjs'
+  return null
+}
+
+/** Si este módulo es el programa que se ejecuta (con el enlace simbólico resuelto, seguridad I3). */
+export function isMain(metaUrl) {
+  if (!process.argv[1]) return false
+  try {
+    return metaUrl === pathToFileURL(realpathSync(process.argv[1])).href
+  } catch {
+    return false
+  }
+}
+
 // --- Lo que se publica ---
 
 /** La página: estática, sin JavaScript y sin ningún texto que venga de Steam. */
@@ -330,7 +400,7 @@ code { font-size: .95em; }
 <body>
 <h1>Servidores de DayZ con jugadores</h1>
 <p>La lista de servidores de DayZ que tenían jugadores, para el buscador del launcher DZKr0nicasLauncher. Solo están los que no estaban vacíos: un servidor vacío no sale.</p>
-<p><strong>Actualizada:</strong> ${when} UTC. <strong>Servidores:</strong> ${count}. El archivo: <a href="servidores.json"><code>servidores.json</code></a>.</p>
+<p><strong>Actualizada:</strong> ${when} UTC. <strong>Servidores:</strong> ${count}. El archivo: <a href="servidores-firmada.json"><code>servidores-firmada.json</code></a>, firmado con Ed25519 (el que lee el launcher desde la 0.5.0-beta.4); y <a href="servidores.json"><code>servidores.json</code></a>, sin firma, para las versiones anteriores.</p>
 <p><strong>Datos de <a href="https://store.steampowered.com/">Steam</a>.</strong> Este proyecto no está respaldado por Valve ni por Steam, ni tiene relación con ellos. Los datos se dan tal cual, sin ninguna garantía: pueden estar incompletos o viejos. La lista es para los usuarios del launcher y su uso personal.</p>
 </body>
 </html>
@@ -401,7 +471,7 @@ async function main() {
   console.log(`Listo para publicar: ${result.servers.length} servidores`)
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+if (isMain(import.meta.url)) {
   main().catch((error) => {
     console.error(`Error: ${error.message}`)
     process.exitCode = 1

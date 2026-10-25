@@ -1,5 +1,7 @@
 # La lista (11.6 b2): cada 15 minutos pide a Steam los servidores no vacíos, los valida y los publica en
 # GitHub Pages. Si algo no cuadra, falla y no publica: sigue en línea la lista anterior.
+# Desde la 11.6 (g), un trabajo aparte la firma con Ed25519: la privada vive en el environment `firma`,
+# y ese trabajo no tiene la clave de Steam. Si la firma falla, no se publica nada.
 # Y una vez al día (11.6 b3), el trabajo `mantener` lo vuelve a encender, porque GitHub apaga el
 # `schedule` de un repositorio público tras 60 días sin actividad.
 name: Publicar
@@ -51,13 +53,47 @@ jobs:
         env:
           ACEPTAR_CAMBIO: ${{ github.event_name == 'workflow_dispatch' && inputs.aceptar_cambio == true }}
         run: node generar.mjs "$RUNNER_TEMP/steam.json" _site
+      # La lista, aún sin firmar, para el trabajo que firma. Solo lleva datos públicos.
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: lista
+          path: _site
+          retention-days: 1
+          if-no-files-found: error
+
+  firmar:
+    needs: generar
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions: {}
+    # La privada solo existe en este environment, que solo acepta la rama main y que los administradores
+    # no se pueden saltar. Sin la clave de Steam. Todos los pasos de este trabajo pueden alcanzar la
+    # privada (está en la memoria del runner): solo acciones de GitHub, fijadas por SHA, y subirlas de
+    # versión es un cambio con acceso a ella (workflows.test.mjs fija sus SHA para que se note).
+    environment: firma
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: lista
+          path: _site
+      - name: Firmar
+        # La privada, solo aquí. El script no imprime nada de ella.
+        env:
+          LISTA_FIRMA_PRIVADA: ${{ secrets.LISTA_FIRMA_PRIVADA }}
+        run: node firmar.mjs _site
+      - name: Verificar
+        # Sin la privada: vuelve a abrir el sobre con claves-publicas.json, con las reglas del launcher.
+        run: node verificar-sitio.mjs _site
       - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:
           path: _site
           retention-days: 1
 
   publicar:
-    needs: generar
+    needs: firmar
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     permissions:

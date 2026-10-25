@@ -1,0 +1,12 @@
+{
+  "descripcion": "Vector fijo de la firma de la lista (11.6 g). Par de usar y tirar: la privada no se guardó. Lo usan las pruebas del launcher y las de este repositorio.",
+  "publica": {
+    "id": "62e5a73bf2f76328",
+    "spki": "MCowBQYDK2VwAyEA4VfbOk2GBH3EZluBhMCllQ8jsOMgmAf7GZXniCoQcgE=",
+    "uso": "prueba"
+  },
+  "lista": "{\"formato\":1,\"prueba\":\"Ñandú, Ω y ✓: bytes de más de uno\"}",
+  "bueno": "{\"formato\":1,\"clave\":\"62e5a73bf2f76328\",\"firma\":\"XTlB0LTIS0aA0UcbOlVTjdbuqViZFH2nTu5o/MAiqsi0nLrrhPLxi/maCrEMdj+TdcYdrX2CSsaNrtSXShXvCg==\",\"lista\":\"{\\\"formato\\\":1,\\\"prueba\\\":\\\"Ñandú, Ω y ✓: bytes de más de uno\\\"}\"}",
+  "sinPrefijo": "{\"formato\":1,\"clave\":\"62e5a73bf2f76328\",\"firma\":\"IT9NU9dmCBEz+XHJtdmJV0iGfFa8SSI8FvgtTUNAu3+6N2cCn97R3Fh1q+xuBUV9A0oXvoK3F72/q0BqF+iJDQ==\",\"lista\":\"{\\\"formato\\\":1,\\\"prueba\\\":\\\"Ñandú, Ω y ✓: bytes de más de uno\\\"}\"}",
+  "sustituto": "{\"formato\":1,\"clave\":\"62e5a73bf2f76328\",\"firma\":\"0pIzqs/beKez6dB7v7xSoxdcRqn38raJEmzORBzQfv/aiw79+hT/fkqz5czYt1R/FFG/EdyDt3B9aFOxhMFGCA==\",\"lista\":\"a\\ud800b\"}"
+}
