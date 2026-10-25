@@ -32,7 +32,7 @@ La lista de servidores de DayZ que tienen jugadores, para el buscador de DZKr0ni
   - `name` y `map`;
   - `players` y `maxPlayers`;
   - `version`;
-  - `region`, el código de región de Steam (0 a 255) o `null`;
+  - `region`, el código de región de Steam (0 a 255) o `null` si no tiene (Steam da `-1`);
   - `etiquetas`: solo `battleye`, `no3rd` (solo primera persona) y `mod`.
 - **Dentro del formato 1 solo se añaden campos.** Un cambio incompatible sale como otro archivo, nunca en esta URL.
 
