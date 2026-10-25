@@ -49,7 +49,17 @@ Una IP con más de 512 servidores se descarta entera y se publica el resto.
 
 **Sin una lista publicada de menos de 3 h** (la primera vez, tras un corte largo, o si la publicada está mal), no hay con qué comparar: solo cuentan los topes de 1000 y 8000. Es a propósito, para que una lista mala no congele la publicación para siempre.
 
-**GitHub apaga el `schedule` de un repositorio público tras 60 días sin actividad.** Hasta que llegue el trabajo que lo vuelve a encender (11.6 b3), lo mantienen vivo los PR de Dependabot que se fusionan. Si la página dice una hora vieja, se enciende a mano en Actions → «Publicar» → «Enable workflow», o con `gh workflow enable publicar.yml --repo kr0nicas/DZKr0nicasLauncher-servidores`. El launcher marca como vieja una lista de más de 24 h y la oculta a los 7 días.
+## Que no se apague
+
+GitHub apaga el `schedule` de un repositorio público tras 60 días sin actividad. Para evitarlo:
+- **El trabajo `mantener`** de «Publicar» corre una vez al día (00:07 UTC). Sin clave, sin checkout y solo con el permiso de encender workflows, vuelve a encender «Publicar». Se puede lanzar a mano con «solo_mantener».
+- **Sin comprobar:** que encenderlo así reinicie la cuenta de los 60 días. Se sabrá cuando pasen.
+- **Los PR de Dependabot que se fusionan** cuentan como actividad.
+- **Si la página dice una hora vieja,** se enciende a mano en Actions → «Publicar» → «Enable workflow», o con:
+
+  `gh workflow enable publicar.yml --repo kr0nicas/DZKr0nicasLauncher-servidores`
+
+El launcher marca como vieja una lista de más de 24 h y la oculta a los 7 días.
 
 **Si una caída es real:** Actions → «Publicar» → «Run workflow», con «aceptar_cambio» marcado. Se salta solo la comparación con la lista anterior; los topes de 1000 y 8000 siguen.
 

@@ -1,26 +1,37 @@
 # La lista (11.6 b2): cada 15 minutos pide a Steam los servidores no vacíos, los valida y los publica en
 # GitHub Pages. Si algo no cuadra, falla y no publica: sigue en línea la lista anterior.
+# Y una vez al día (11.6 b3), el trabajo `mantener` lo vuelve a encender, porque GitHub apaga el
+# `schedule` de un repositorio público tras 60 días sin actividad.
 name: Publicar
 
 on:
   schedule:
     - cron: '*/15 * * * *'
+    # La pasada diaria de `mantener`. Si cambia, cambian también las tres condiciones que la nombran
+    # (la prueba workflows.test.mjs lo comprueba).
+    - cron: '7 0 * * *'
   workflow_dispatch:
     inputs:
       aceptar_cambio:
         description: 'Publicar aunque el recuento cambie más del 50 % respecto a la última lista (los topes de 1000 y 8000 siguen)'
         type: boolean
         default: false
+      solo_mantener:
+        description: 'No publicar: solo volver a encender este workflow (lo que hace la pasada diaria)'
+        type: boolean
+        default: false
 
 permissions: {}
 
-# Dos pasadas no se pisan: la segunda espera a la primera.
+# Dos pasadas de publicar no se pisan: la segunda espera a la primera. `mantener` va en su propio
+# grupo, para no ocupar el sitio de una pasada de publicar en espera.
 concurrency:
-  group: publicar
+  group: ${{ (github.event.schedule == '7 0 * * *' || (github.event_name == 'workflow_dispatch' && inputs.solo_mantener == true)) && 'mantener' || 'publicar' }}
   cancel-in-progress: false
 
 jobs:
   generar:
+    if: ${{ !(github.event.schedule == '7 0 * * *' || (github.event_name == 'workflow_dispatch' && inputs.solo_mantener == true)) }}
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     permissions: {}
@@ -58,3 +69,20 @@ jobs:
     steps:
       - id: desplegar
         uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
+
+  mantener:
+    # Una vez al día, o a mano con «solo_mantener». Sin environment, sin checkout, sin la clave: solo
+    # el permiso de encender workflows, con el token de esta pasada.
+    if: ${{ github.event.schedule == '7 0 * * *' || (github.event_name == 'workflow_dispatch' && inputs.solo_mantener == true) }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    permissions:
+      actions: write
+    steps:
+      - name: Volver a encender «Publicar»
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          gh workflow enable publicar.yml
+          echo "Publicar: $(gh api "repos/$GH_REPO/actions/workflows/publicar.yml" --jq .state)"
