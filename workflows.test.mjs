@@ -32,10 +32,29 @@ test('mantener solo puede encender workflows: sin environment, sin checkout, sin
   assert.match(m, /gh workflow enable publicar\.yml/)
 })
 
-test('la clave solo está en el paso que pide a Steam, y solo en «generar»', () => {
-  assert.equal(publicar.split('secrets.').length - 1, 1)
-  assert.match(job(publicar, 'generar'), /STEAM_WEB_API_KEY: \$\{\{ secrets\.STEAM_WEB_API_KEY \}\}\n\s+run: node pedir-a-steam\.mjs/)
+test('la clave de Steam solo está en el paso que pide a Steam, y solo en «generar»', () => {
+  const generar = job(publicar, 'generar')
+  assert.match(generar, /STEAM_WEB_API_KEY: \$\{\{ secrets\.STEAM_WEB_API_KEY \}\}\n\s+run: node pedir-a-steam\.mjs/)
+  assert.equal(generar.split('secrets.').length - 1, 1)
+  assert.match(generar, /environment: steam\n/)
+  assert.doesNotMatch(generar, /LISTA_FIRMA_PRIVADA|upload-pages-artifact/)
   assert.doesNotMatch(job(publicar, 'publicar'), /secrets\.|checkout/)
+})
+
+test('la privada de firma solo está en el paso que firma, en su trabajo y su environment (11.6 g)', () => {
+  // Dos secretos en todo el archivo, cada uno en su trabajo.
+  assert.equal(publicar.split('secrets.').length - 1, 2)
+  const firmar = job(publicar, 'firmar')
+  assert.match(firmar, /environment: firma\n/)
+  assert.match(firmar, /permissions: \{\}\n/)
+  assert.match(firmar, /needs: generar\n/)
+  assert.match(firmar, /LISTA_FIRMA_PRIVADA: \$\{\{ secrets\.LISTA_FIRMA_PRIVADA \}\}\n\s+run: node firmar\.mjs _site\n/)
+  assert.equal(firmar.split('secrets.').length - 1, 1)
+  assert.doesNotMatch(firmar, /STEAM_WEB_API_KEY|steam\.json/)
+  assert.match(firmar, /persist-credentials: false/)
+  // Solo se despliega lo firmado.
+  assert.match(job(publicar, 'publicar'), /needs: firmar\n/)
+  assert.match(firmar, /upload-pages-artifact/)
 })
 
 test('ningún workflow usa pull_request_target, ni ${{ }} dentro de run, ni acciones sin SHA', () => {

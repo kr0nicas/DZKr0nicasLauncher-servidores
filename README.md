@@ -6,14 +6,19 @@ La lista de servidores de DayZ que tienen jugadores, para el buscador de DZKr0ni
 
 ## Qué hay
 
-**La lista:** <https://kr0nicas.github.io/DZKr0nicasLauncher-servidores/servidores.json>, cada 15 minutos (GitHub puede retrasar o saltarse alguna pasada).
+**La lista**, cada 15 minutos (GitHub puede retrasar o saltarse alguna pasada):
+- <https://kr0nicas.github.io/DZKr0nicasLauncher-servidores/servidores-firmada.json>, firmada con Ed25519: la lee el launcher desde la 0.5.0-beta.4;
+- <https://kr0nicas.github.io/DZKr0nicasLauncher-servidores/servidores.json>, la misma sin firma, para las versiones anteriores. Se deja de publicar dos semanas después de repartir la 0.5.0-beta.4.
 
 | Archivo | Qué hace |
 | --- | --- |
-| `.github/workflows/publicar.yml` | Cada 15 minutos: pide la lista, la valida y la publica en Pages. El trabajo que lleva la clave no despliega, y el que despliega no ve ningún secreto |
+| `.github/workflows/publicar.yml` | Cada 15 minutos: pide la lista, la valida, la firma y la publica en Pages. El trabajo con la clave de Steam no firma ni despliega, el que firma no tiene la clave de Steam, y el que despliega no ve ningún secreto |
 | `lib/steam.mjs` | La única petición con la clave: `GetServerList` con `\appid\221100\empty\1`, por cabecera, sin seguir redirecciones |
 | `pedir-a-steam.mjs` | El paso con la clave: escribe la respuesta cruda en `$RUNNER_TEMP` y nada más |
 | `generar.mjs` | El paso sin clave: valida, compara con la última lista publicada y deja en `_site/` solo `servidores.json` e `index.html` |
+| `firmar.mjs` y `lib/firma.mjs` | El paso que firma: vuelve a validar la lista con las funciones de `generar.mjs`, comprueba que la privada es la de una pública de `claves-publicas.json` y deja al lado `servidores-firmada.json` |
+| `claves-publicas.json` | Las claves públicas aceptadas: la de la CI y la de repuesto. Son las mismas que lleva el launcher |
+| `crear-clave-ci.mjs` | Crea el par de la CI: la privada va directa al secreto, sin pantalla ni disco, y la pública a `claves-publicas.json` |
 | `sonda.mjs` | Una sola petición a Steam, lanzada a mano (workflow «Sonda»): código HTTP, recuento y tiempo |
 | `fixtures/hostil.json` y `hostil.esperado.json` | Una respuesta hostil y lo que tiene que salir de ella. El launcher usa las mismas en sus pruebas |
 | `*.test.mjs` | Las pruebas, sin red (`node --test`) |
@@ -65,7 +70,25 @@ El launcher marca como vieja una lista de más de 24 h y la oculta a los 7 días
 
 El plan está en el repositorio privado del launcher: sprint 11, tarea 11.6 (b), y el ADR-003.
 
-## Cómo se trata la clave
+## Formato de `servidores-firmada.json` (sobre, formato 1)
+
+```json
+{ "formato": 1, "clave": "6c7d726e3d41f1e6", "firma": "<64 bytes en base64>", "lista": "<el texto de servidores.json>" }
+```
+
+- **Lo firmado** son los bytes UTF-8 de `DZKr0nicasLauncher/lista-global/1\n` seguidos de `lista`, tal cual.
+- **`clave`** son los 8 primeros bytes, en hex, del SHA-256 de la clave pública en DER SPKI. Solo sirve para buscarla entre las que lleva el launcher.
+- El launcher solo acepta esas cuatro claves, la firma en base64 canónico y una lista que, ya verificada, vuelve a pasar todas sus reglas.
+
+## Cómo se trata la clave de firma
+
+- **La privada de la CI** va solo como secreto `LISTA_FIRMA_PRIVADA` del environment `firma`, que solo acepta la rama `main`. Solo la ve el paso «Firmar», en un trabajo sin la clave de Steam. No se imprime nada de ella.
+- **La de repuesto** la guarda el autor fuera de GitHub, en su gestor de contraseñas. Su pública está en `claves-publicas.json` y en el launcher.
+- **Si se pierde el secreto** (GitHub no deja leerlo): se pone la de repuesto, `gh secret set LISTA_FIRMA_PRIVADA --env firma --repo kr0nicas/DZKr0nicasLauncher-servidores`, y se pega por la entrada estándar. Los launchers no se enteran.
+- **Si se filtra una privada:** no hay revocación sin sacar versión. Se cambia el secreto (`node crear-clave-ci.mjs --rotar`, o la de repuesto), se saca un launcher sin la clave filtrada y se avisa por Discord. Hasta que todos actualicen, quien tenga la filtrada y además controle el nombre `kr0nicas.github.io` podría colar una lista.
+- **Si la firma falla, no se publica nada:** sigue en línea la última lista buena, y GitHub manda el correo de fallo.
+
+## Cómo se trata la clave de Steam
 
 - Va solo como secreto `STEAM_WEB_API_KEY` del environment `steam`, que solo acepta la rama `main` y no se pueden saltar los administradores.
 - Solo la ve el paso que llama a Steam. La manda por cabecera, sin seguir redirecciones, y nunca la imprime.

@@ -330,7 +330,7 @@ code { font-size: .95em; }
 <body>
 <h1>Servidores de DayZ con jugadores</h1>
 <p>La lista de servidores de DayZ que tenían jugadores, para el buscador del launcher DZKr0nicasLauncher. Solo están los que no estaban vacíos: un servidor vacío no sale.</p>
-<p><strong>Actualizada:</strong> ${when} UTC. <strong>Servidores:</strong> ${count}. El archivo: <a href="servidores.json"><code>servidores.json</code></a>.</p>
+<p><strong>Actualizada:</strong> ${when} UTC. <strong>Servidores:</strong> ${count}. El archivo: <a href="servidores-firmada.json"><code>servidores-firmada.json</code></a>, firmado con Ed25519 (el que lee el launcher desde la 0.5.0-beta.4); y <a href="servidores.json"><code>servidores.json</code></a>, sin firma, para las versiones anteriores.</p>
 <p><strong>Datos de <a href="https://store.steampowered.com/">Steam</a>.</strong> Este proyecto no está respaldado por Valve ni por Steam, ni tiene relación con ellos. Los datos se dan tal cual, sin ninguna garantía: pueden estar incompletos o viejos. La lista es para los usuarios del launcher y su uso personal.</p>
 </body>
 </html>
