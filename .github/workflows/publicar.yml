@@ -1,0 +1,60 @@
+# La lista (11.6 b2): cada 15 minutos pide a Steam los servidores no vacíos, los valida y los publica en
+# GitHub Pages. Si algo no cuadra, falla y no publica: sigue en línea la lista anterior.
+name: Publicar
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+    inputs:
+      aceptar_cambio:
+        description: 'Publicar aunque el recuento cambie más del 50 % respecto a la última lista (los topes de 1000 y 8000 siguen)'
+        type: boolean
+        default: false
+
+permissions: {}
+
+# Dos pasadas no se pisan: la segunda espera a la primera.
+concurrency:
+  group: publicar
+  cancel-in-progress: false
+
+jobs:
+  generar:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions: {}
+    # El secreto solo existe en este environment, que solo acepta la rama main.
+    environment: steam
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+      - name: Pedir la lista a Steam
+        # La clave, solo aquí. El script escribe la respuesta cruda y no la interpreta.
+        env:
+          STEAM_WEB_API_KEY: ${{ secrets.STEAM_WEB_API_KEY }}
+        run: node pedir-a-steam.mjs "$RUNNER_TEMP/steam.json"
+      - name: Validar y generar
+        # Sin la clave. «aceptar_cambio» solo vale en una pasada lanzada a mano.
+        env:
+          ACEPTAR_CAMBIO: ${{ github.event_name == 'workflow_dispatch' && inputs.aceptar_cambio == true }}
+        run: node generar.mjs "$RUNNER_TEMP/steam.json" _site
+      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: _site
+          retention-days: 1
+
+  publicar:
+    needs: generar
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.desplegar.outputs.page_url }}
+    steps:
+      - id: desplegar
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1

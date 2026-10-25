@@ -1,0 +1,64 @@
+{
+  "response": {
+    "servers": [
+      {
+        "addr": "172.111.51.3:2303",
+        "gameport": 2302,
+        "name": "DayZERO Chernarus",
+        "map": "chernarusplus",
+        "players": 40,
+        "max_players": 60,
+        "version": "1.30.164200",
+        "region": 3,
+        "gametype": "battleye,no3rd,external,privHive,shard123ABC,lqs0,etm4.000000,entm24.000000,mod,"
+      },
+      {
+        "addr": "172.111.51.3:2303",
+        "gameport": 2302,
+        "name": "repetida",
+        "map": "chernarusplus",
+        "players": 1,
+        "max_players": 60,
+        "version": "1.30.164200",
+        "region": 3,
+        "gametype": "battleye"
+      },
+      { "addr": "192.168.1.10:2303", "gameport": 2302, "name": "privada", "players": 1, "max_players": 60 },
+      { "addr": "0.0.0.0:2303", "gameport": 2302, "name": "esta red", "players": 1, "max_players": 60 },
+      { "addr": "300.1.1.1:2303", "gameport": 2302, "name": "octeto imposible", "players": 1, "max_players": 60 },
+      { "addr": "172.111.051.3:2303", "gameport": 2302, "name": "cero a la izquierda", "players": 1, "max_players": 60 },
+      { "addr": "evil.example:2303", "gameport": 2302, "name": "un nombre, no una IPv4", "players": 1, "max_players": 60 },
+      { "addr": "172.111.51.4:99999", "gameport": 2302, "name": "puerto imposible", "players": 1, "max_players": 60 },
+      { "addr": "172.111.51.4:53", "gameport": 2302, "name": "puerto denegado", "players": 1, "max_players": 60 },
+      { "addr": "172.111.51.4:1900", "gameport": 2302, "name": "denegado por encima de 1024", "players": 1, "max_players": 60 },
+      { "addr": "172.111.51.4:1023", "gameport": 2302, "name": "por debajo de 1024", "players": 1, "max_players": 60 },
+      { "addr": "185.207.214.84:2400", "gameport": 22, "name": "puerto de juego bajo", "players": 1, "max_players": 60 },
+      { "addr": "185.207.214.84:2401", "gameport": "x", "name": "puerto de juego que no es número", "players": 1, "max_players": 60 },
+      { "addr": "185.207.214.84:2402", "gameport": 2402, "name": "región que no es número", "players": 1, "max_players": 60, "region": "eu" },
+      { "addr": "185.207.214.84:2403", "gameport": 2402, "name": "región fuera de rango", "players": 1, "max_players": 60, "region": 300 },
+      "no soy un objeto",
+      ["ni", "una", "lista"],
+      null,
+      {
+        "addr": "185.207.214.84:2315",
+        "gameport": 2502,
+        "name": "MANHUNT‮ Nasdara\u0007\u001b[31m rojo",
+        "map": "nasdara​",
+        "players": 999999,
+        "max_players": 1000,
+        "version": "1.30; rm -rf",
+        "region": 3,
+        "gametype": "battleye,BATTLEYE,mod;rm,shardABC"
+      },
+      {
+        "addr": "172.111.51.4:27016",
+        "name": "KarmaKrew sin puerto de juego ni región, con un nombre muy largo que se recorta por puntos de código 😀😀😀😀😀😀😀😀😀😀 y sigue y sigue",
+        "map": "sakhal",
+        "players": 54,
+        "max_players": 60,
+        "version": "1.30.164200",
+        "gametype": "no3rd"
+      }
+    ]
+  }
+}
