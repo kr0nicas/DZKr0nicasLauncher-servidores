@@ -8,7 +8,7 @@
 import { execFileSync } from 'node:child_process'
 import { generateKeyPairSync } from 'node:crypto'
 import { readFileSync, writeFileSync } from 'node:fs'
-import { dirname, isAbsolute, resolve } from 'node:path'
+import { dirname, isAbsolute, resolve, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { keyId, parsePublicKeys, spkiBase64 } from './lib/firma.mjs'
 
@@ -50,7 +50,7 @@ function ghPath() {
   } catch {
     fail('No se encuentra gh. Instálalo (https://cli.github.com) y ejecuta gh auth login.')
   }
-  const gh = found.find((p) => isAbsolute(p) && !resolve(p).startsWith(resolve(HERE)))
+  const gh = found.find((p) => isAbsolute(p) && !resolve(p).startsWith(resolve(HERE) + sep))
   if (gh === undefined) fail('El gh que hay está dentro de este clon: no se usa. Instálalo fuera.')
   return gh
 }
