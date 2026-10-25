@@ -36,6 +36,8 @@
       { "addr": "185.207.214.84:2401", "gameport": "x", "name": "puerto de juego que no es número", "players": 1, "max_players": 60 },
       { "addr": "185.207.214.84:2402", "gameport": 2402, "name": "región que no es número", "players": 1, "max_players": 60, "region": "eu" },
       { "addr": "185.207.214.84:2403", "gameport": 2402, "name": "región fuera de rango", "players": 1, "max_players": 60, "region": 300 },
+      { "addr": "185.207.214.84:2404", "gameport": 2402, "name": "región por debajo de -1", "players": 1, "max_players": 60, "region": -2 },
+      { "addr": "172.111.51.3:2403", "gameport": 2402, "name": "DayZERO Namalsk, sin región (-1, como la da Steam)", "map": "namalsk", "players": 12, "max_players": 60, "version": "1.30.164200", "region": -1, "gametype": "battleye,no3rd" },
       "no soy un objeto",
       ["ni", "una", "lista"],
       null,

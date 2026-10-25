@@ -31,6 +31,21 @@
       ]
     },
     {
+      "ip": "172.111.51.3",
+      "query": 2403,
+      "game": 2402,
+      "name": "DayZERO Namalsk, sin región (-1, como la da Steam)",
+      "map": "namalsk",
+      "players": 12,
+      "maxPlayers": 60,
+      "version": "1.30.164200",
+      "region": null,
+      "etiquetas": [
+        "battleye",
+        "no3rd"
+      ]
+    },
+    {
       "ip": "185.207.214.84",
       "query": 2315,
       "game": 2502,
@@ -50,10 +65,15 @@
     "ip": 5,
     "puerto": 4,
     "puerto-juego": 2,
-    "region": 2,
+    "region": 3,
     "repetida": 1,
     "tope-por-ip": 0
   },
-  "total": 20,
-  "overCapIps": 0
+  "total": 22,
+  "overCapIps": 0,
+  "badRegions": {
+    "300": 1,
+    "string": 1,
+    "-2": 1
+  }
 }
