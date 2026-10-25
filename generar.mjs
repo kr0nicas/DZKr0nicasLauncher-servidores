@@ -122,6 +122,8 @@ export function parseSteam(raw) {
   const seen = new Set()
   const perIp = new Map()
   const kept = []
+  /** Los valores de `region` descartados, como mucho 10 distintos: solo números o un tipo, para el registro. */
+  const badRegions = new Map()
   for (const item of list) {
     if (typeof item !== 'object' || item === null || Array.isArray(item)) {
       dropped.forma++
@@ -143,11 +145,20 @@ export function parseSteam(raw) {
       dropped['puerto-juego']++
       continue
     }
-    const regionRaw = item.region === undefined || item.region === null ? null : int(item.region)
-    if (item.region !== undefined && item.region !== null && (regionRaw === null || regionRaw < 0 || regionRaw > 255)) {
+    // Steam da -1 cuando el servidor no tiene región: se publica como null.
+    const regionInt = item.region === undefined || item.region === null ? null : int(item.region)
+    if (
+      item.region !== undefined &&
+      item.region !== null &&
+      (regionInt === null || regionInt < -1 || regionInt > 255)
+    ) {
       dropped.region++
+      const label = regionInt === null ? typeof item.region : String(regionInt)
+      if (badRegions.size < 10 || badRegions.has(label))
+        badRegions.set(label, (badRegions.get(label) ?? 0) + 1)
       continue
     }
+    const regionRaw = regionInt === -1 ? null : regionInt
     const key = `${ip}:${query}`
     if (seen.has(key)) {
       dropped.repetida++
@@ -178,7 +189,13 @@ export function parseSteam(raw) {
     .filter((s) => !overCap.has(s.ip))
     .sort((a, b) => b.players - a.players || (a.ip < b.ip ? -1 : a.ip > b.ip ? 1 : a.query - b.query))
   dropped['tope-por-ip'] = kept.length - servers.length
-  return { servers, dropped, total: list.length, overCapIps: overCap.size }
+  return {
+    servers,
+    dropped,
+    total: list.length,
+    overCapIps: overCap.size,
+    badRegions: Object.fromEntries(badRegions)
+  }
 }
 
 // --- La última lista publicada (la base) ---
@@ -360,6 +377,8 @@ async function main() {
     .join(', ')
   console.log(`Steam: ${result.total} entradas; quedan ${result.servers.length}`)
   console.log(`Descartadas: ${droppedText}; IP de más de ${MAX_PER_IP}: ${result.overCapIps}`)
+  if (result.dropped.region > 0)
+    console.log(`Regiones descartadas, por valor: ${JSON.stringify(result.badRegions)}`)
   console.log(
     base.count === null
       ? `Sin base para comparar: ${base.reason}`
