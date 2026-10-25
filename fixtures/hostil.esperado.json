@@ -1,0 +1,59 @@
+{
+  "servers": [
+    {
+      "ip": "172.111.51.4",
+      "query": 27016,
+      "game": null,
+      "name": "KarmaKrew sin puerto de juego ni región, con un nombre muy largo que se recorta por puntos de código",
+      "map": "sakhal",
+      "players": 54,
+      "maxPlayers": 60,
+      "version": "1.30.164200",
+      "region": null,
+      "etiquetas": [
+        "no3rd"
+      ]
+    },
+    {
+      "ip": "172.111.51.3",
+      "query": 2303,
+      "game": 2302,
+      "name": "DayZERO Chernarus",
+      "map": "chernarusplus",
+      "players": 40,
+      "maxPlayers": 60,
+      "version": "1.30.164200",
+      "region": 3,
+      "etiquetas": [
+        "battleye",
+        "no3rd",
+        "mod"
+      ]
+    },
+    {
+      "ip": "185.207.214.84",
+      "query": 2315,
+      "game": 2502,
+      "name": "MANHUNT Nasdara rojo",
+      "map": "nasdara",
+      "players": 0,
+      "maxPlayers": 200,
+      "version": "",
+      "region": 3,
+      "etiquetas": [
+        "battleye"
+      ]
+    }
+  ],
+  "dropped": {
+    "forma": 3,
+    "ip": 5,
+    "puerto": 4,
+    "puerto-juego": 2,
+    "region": 2,
+    "repetida": 1,
+    "tope-por-ip": 0
+  },
+  "total": 20,
+  "overCapIps": 0
+}
