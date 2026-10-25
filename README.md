@@ -41,7 +41,7 @@ La lista de servidores de DayZ que tienen jugadores, para el buscador de DZKr0ni
 Si pasa cualquiera de estas cosas, la pasada falla y sigue en línea la lista anterior:
 - Steam no contesta bien;
 - llegan 10 000 entradas (estaría cortada);
-- se descarta más del 5 % de las entradas;
+- más del 5 % de las entradas están mal (sin contar las de una IP de más de 512, que se descarta entera);
 - quedan menos de 1000 o más de 8000 servidores;
 - con una lista publicada de menos de 3 h, el recuento cambia más del 50 % o `generado` no avanza.
 
