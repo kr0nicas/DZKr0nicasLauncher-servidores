@@ -1,0 +1,24 @@
+# La sonda (11.6 b1): una sola petición a Steam, lanzada a mano, para saber si Steam contesta a las
+# máquinas de GitHub. Imprime solo el código HTTP, el recuento y el tiempo.
+name: Sonda
+
+on:
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  sonda:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    # El secreto solo existe en este environment, que solo acepta la rama main.
+    environment: steam
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+      - name: Preguntar una vez a Steam
+        # La clave, solo en el env de este paso; el script la manda por cabecera y no la imprime.
+        env:
+          STEAM_WEB_API_KEY: ${{ secrets.STEAM_WEB_API_KEY }}
+        run: node sonda.mjs
