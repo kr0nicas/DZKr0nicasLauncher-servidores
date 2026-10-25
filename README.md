@@ -16,8 +16,10 @@ La lista de servidores de DayZ que tienen jugadores, para el buscador de DZKr0ni
 | `lib/steam.mjs` | La única petición con la clave: `GetServerList` con `\appid\221100\empty\1`, por cabecera, sin seguir redirecciones |
 | `pedir-a-steam.mjs` | El paso con la clave: escribe la respuesta cruda en `$RUNNER_TEMP` y nada más |
 | `generar.mjs` | El paso sin clave: valida, compara con la última lista publicada y deja en `_site/` solo `servidores.json` e `index.html` |
-| `firmar.mjs` y `lib/firma.mjs` | El paso que firma: vuelve a validar la lista con las funciones de `generar.mjs`, comprueba que la privada es la de una pública de `claves-publicas.json` y deja al lado `servidores-firmada.json` |
-| `claves-publicas.json` | Las claves públicas aceptadas: la de la CI y la de repuesto. Son las mismas que lleva el launcher |
+| `firmar.mjs` y `lib/firma.mjs` | El paso que firma: exige que la lista sea byte a byte la que escribiría `generar.mjs` en esta pasada, rehace `index.html`, comprueba que la privada es la de una pública de `claves-publicas.json` y deja al lado `servidores-firmada.json` |
+| `verificar-sitio.mjs` | El paso siguiente, sin la privada: abre el sobre con `claves-publicas.json`, con las reglas del launcher, y comprueba que lleva `servidores.json` tal cual |
+| `claves-publicas.json` | Las claves públicas aceptadas, las mismas que lleva el launcher. Hoy, la de la CI; la de repuesto se añade cuando el autor la genere |
+| `fixtures/sobre-de-prueba.json` | Un vector fijo, con un par de usar y tirar: el launcher lo prueba igual |
 | `crear-clave-ci.mjs` | Crea el par de la CI: la privada va directa al secreto, sin pantalla ni disco, y la pública a `claves-publicas.json` |
 | `sonda.mjs` | Una sola petición a Steam, lanzada a mano (workflow «Sonda»): código HTTP, recuento y tiempo |
 | `fixtures/hostil.json` y `hostil.esperado.json` | Una respuesta hostil y lo que tiene que salir de ella. El launcher usa las mismas en sus pruebas |
@@ -78,14 +80,15 @@ El plan está en el repositorio privado del launcher: sprint 11, tarea 11.6 (b),
 
 - **Lo firmado** son los bytes UTF-8 de `DZKr0nicasLauncher/lista-global/1\n` seguidos de `lista`, tal cual.
 - **`clave`** son los 8 primeros bytes, en hex, del SHA-256 de la clave pública en DER SPKI. Solo sirve para buscarla entre las que lleva el launcher.
-- El launcher solo acepta esas cuatro claves, la firma en base64 canónico y una lista que, ya verificada, vuelve a pasar todas sus reglas.
+- El launcher solo acepta esas cuatro claves del sobre, la firma en base64 canónico y una lista bien formada que, ya verificada, vuelve a pasar todas sus reglas. Nunca vuelve a `servidores.json`.
 
 ## Cómo se trata la clave de firma
 
-- **La privada de la CI** va solo como secreto `LISTA_FIRMA_PRIVADA` del environment `firma`, que solo acepta la rama `main`. Solo la ve el paso «Firmar», en un trabajo sin la clave de Steam. No se imprime nada de ella.
-- **La de repuesto** la guarda el autor fuera de GitHub, en su gestor de contraseñas. Su pública está en `claves-publicas.json` y en el launcher.
-- **Si se pierde el secreto** (GitHub no deja leerlo): se pone la de repuesto, `gh secret set LISTA_FIRMA_PRIVADA --env firma --repo kr0nicas/DZKr0nicasLauncher-servidores`, y se pega por la entrada estándar. Los launchers no se enteran.
-- **Si se filtra una privada:** no hay revocación sin sacar versión. Se cambia el secreto (`node crear-clave-ci.mjs --rotar`, o la de repuesto), se saca un launcher sin la clave filtrada y se avisa por Discord. Hasta que todos actualicen, quien tenga la filtrada y además controle el nombre `kr0nicas.github.io` podría colar una lista.
+- **La privada de la CI** va solo como secreto `LISTA_FIRMA_PRIVADA` del environment `firma`, que solo acepta la rama `main` y que los administradores no se pueden saltar. Solo la lee el paso «Firmar», en un trabajo sin la clave de Steam, y no se imprime nada de ella. Las acciones de ese trabajo (solo de GitHub, fijadas por SHA) pueden alcanzarla: subirlas de versión es un cambio con acceso a la clave, y `workflows.test.mjs` falla a propósito para que se revise.
+- **La de repuesto** la genera el autor en su terminal (`scripts\crear-clave-repuesto.mjs` del launcher) y la guarda fuera de GitHub, en su gestor de contraseñas. Su pública se añade a mano a `claves-publicas.json` (`{ "id", "spki", "uso": "repuesto" }`, que la prueba de las claves valida) y al launcher. **Hasta entonces no hay repuesto:** ponerla en el environment haría fallar «Firmar».
+- **Si se pierde el secreto** (GitHub no deja leerlo): se pone la de repuesto con `gh secret set LISTA_FIRMA_PRIVADA --env firma --repo kr0nicas/DZKr0nicasLauncher-servidores`, pegándola por la entrada estándar. Los launchers no se enteran.
+- **Si se filtra una privada:** no hay revocación sin sacar versión. Se cambia el secreto (`node crear-clave-ci.mjs --rotar`, desde fuera de un `gh` dentro del clon, o la de repuesto) y se fusiona en el acto `claves-publicas.json`: hasta entonces «Firmar» falla y no publica. Después, un launcher sin la clave filtrada y el aviso por Discord. Hasta que todos actualicen, quien tenga la filtrada y además controle el nombre `kr0nicas.github.io` podría colar una lista.
+- **Un reintento a mano** de una pasada fallida no firma si han pasado más de 15 minutos desde que `generar` hizo la lista: se lanza una pasada nueva.
 - **Si la firma falla, no se publica nada:** sigue en línea la última lista buena, y GitHub manda el correo de fallo.
 
 ## Cómo se trata la clave de Steam
