@@ -61,6 +61,8 @@ test('una IP con más de 512 servidores se descarta entera y se publica el resto
   assert.equal(r.dropped['tope-por-ip'], MAX_PER_IP + 1)
   assert.ok(r.servers.every((s) => s.ip !== '172.111.51.4'))
   assert.equal(r.servers.length, others.length)
+  // Y se publica: lo que quita el tope por IP no cuenta en el 5 % (513 de 1638 sería un 31 %).
+  assert.deepEqual(failures({ result: r, base: noBase, nowS: NOW, acceptChange: false }), [])
   // Con 512 justos, no.
   const r512 = parseSteam(steam(crowded.slice(0, MAX_PER_IP)))
   assert.equal(r512.overCapIps, 0)
